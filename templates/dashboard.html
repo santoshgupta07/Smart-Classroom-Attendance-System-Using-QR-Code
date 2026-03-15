@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendAI — Teacher Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0f; --surface:#12121a; --surface2:#1a1a26; --border:#2a2a40;
+  --accent:#6c63ff; --accent2:#ff6584; --green:#00e5a0; --yellow:#ffd166; --red:#ff4757;
+  --text:#e8e8f0; --muted:#6b6b8a;
+  --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(108,99,255,.04)1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.04)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.container{max-width:1400px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+/* HEADER */
+header{border-bottom:1px solid var(--border);padding:16px 0;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.header-inner{display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:1.05rem;font-weight:700}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:grid;place-items:center;font-size:1rem}
+.badge{font-family:var(--mono);font-size:.62rem;padding:3px 8px;border-radius:99px;border:1px solid var(--border);color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--green);font-family:var(--mono)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
+
+/* NAV TABS */
+.nav-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:10px;padding:4px;border:1px solid var(--border);margin-bottom:28px}
+.nav-tab{flex:1;padding:9px 16px;border:none;border-radius:7px;font-family:var(--mono);font-size:.72rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;transition:all .2s}
+.nav-tab.active{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(108,99,255,.4)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+main{padding:28px 0 60px}
+.page-title{font-family:var(--mono);font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+h1{font-size:1.9rem;font-weight:600;letter-spacing:-.5px;margin-bottom:24px}
+h1 span{color:var(--accent)}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-4{grid-template-columns:repeat(2,1fr)}}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:rgba(108,99,255,.35)}
+.card-label{font-size:.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-family:var(--mono);margin-bottom:8px}
+.card-value{font-size:2.2rem;font-weight:600;font-family:var(--mono);line-height:1}
+.card-sub{font-size:.78rem;color:var(--muted);margin-top:6px}
+.accent-green{color:var(--green)}.accent-yellow{color:var(--yellow)}.accent-red{color:var(--accent2)}.accent-purple{color:var(--accent)}
+
+/* QR CARD */
+.qr-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px}
+.qr-card h2{font-size:.95rem;font-weight:600;margin-bottom:18px}
+
+.form-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.form-field{flex:1;min-width:140px}
+.field-label{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:5px}
+.form-input,.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-family:var(--sans);font-size:.88rem;outline:none;transition:border-color .2s}
+.form-input:focus,.form-select:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+.form-select option{background:var(--surface2);color:var(--text)}
+
+.btn{padding:10px 20px;border:none;border-radius:8px;font-family:var(--mono);font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(108,99,255,.4)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-green{background:var(--green);color:#0a0a0f;font-weight:700}
+.btn-green:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,229,160,.3)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,71,87,.4)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+
+.qr-display{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 0}
+.qr-frame{width:190px;height:190px;border:2px solid var(--border);border-radius:12px;background:var(--surface2);display:grid;place-items:center;overflow:hidden}
+.qr-frame img{width:175px;height:175px;border-radius:8px}
+.qr-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:.78rem;text-align:center}
+
+/* Lecture badge */
+.lecture-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.4);border-radius:99px;padding:4px 12px;font-family:var(--mono);font-size:.7rem;color:var(--accent);margin-bottom:6px}
+
+.timer-bar{width:190px;height:4px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.timer-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--green),var(--yellow));width:100%;transition:width 1s linear,background .5s}
+.timer-fill.warning{background:linear-gradient(90deg,var(--yellow),var(--accent2))}
+.timer-fill.critical{background:var(--accent2)}
+.timer-text{font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--green)}
+.timer-text.warning{color:var(--yellow)}
+.timer-text.critical{color:var(--accent2);animation:blink .5s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+
+.session-stopped-banner{background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.4);border-radius:8px;padding:12px 16px;text-align:center;font-family:var(--mono);font-size:.75rem;color:var(--red);display:none}
+
+.session-meta{font-family:var(--mono);font-size:.63rem;color:var(--muted);text-align:center;line-height:1.7}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+
+/* Subject pills */
+.subject-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.subject-pill{padding:5px 12px;border-radius:99px;font-size:.72rem;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);color:var(--muted);background:var(--surface2);transition:all .2s;white-space:nowrap}
+.subject-pill:hover{border-color:var(--accent);color:var(--accent)}
+.subject-pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.subject-pill .count{font-size:.6rem;opacity:.7;margin-left:4px}
+
+/* TABLE */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.section-header h2{font-size:.95rem;font-weight:600}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead th{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);border-bottom:1px solid var(--border);padding:9px 13px;text-align:left;white-space:nowrap}
+tbody tr{border-bottom:1px solid rgba(42,42,64,.5);transition:background .15s}
+tbody tr:hover{background:rgba(108,99,255,.05)}
+tbody tr:last-child{border-bottom:none}
+td{padding:11px 13px}
+.td-name{font-weight:500}
+.td-sub{font-size:.72rem;color:var(--muted)}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:.68rem;font-family:var(--mono);font-weight:700}
+.status-present{background:rgba(0,229,160,.1);color:var(--green);border:1px solid rgba(0,229,160,.3)}
+.status-stopped{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.3)}
+.status-active{background:rgba(108,99,255,.1);color:var(--accent);border:1px solid rgba(108,99,255,.3)}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted);font-size:.83rem}
+
+/* SESSION HISTORY */
+.session-list{display:flex;flex-direction:column;gap:8px}
+.session-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color .2s}
+.session-item:hover{border-color:var(--accent)}
+.session-item.active{border-color:var(--accent);background:rgba(108,99,255,.08)}
+.session-item.stopped-item{border-color:rgba(255,71,87,.3)}
+.si-subject{font-weight:500;font-size:.88rem}
+.si-meta{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-top:3px}
+.si-right{display:flex;align-items:center;gap:8px}
+.si-count{font-family:var(--mono);font-size:.72rem;background:rgba(108,99,255,.2);color:var(--accent);padding:2px 8px;border-radius:99px}
+
+/* STUDENTS TABLE */
+.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.student-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color .2s}
+.student-card:hover{border-color:rgba(108,99,255,.4)}
+.sc-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sc-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+.sc-name{font-weight:600;font-size:.9rem}
+.sc-id{font-family:var(--mono);font-size:.65rem;color:var(--muted)}
+.sc-detail{display:flex;flex-wrap:wrap;gap:6px}
+.sc-chip{font-size:.68rem;padding:2px 8px;border-radius:4px;background:rgba(108,99,255,.1);color:var(--accent);font-family:var(--mono)}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 18px;font-size:.83rem;max-width:300px;transform:translateY(20px);opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.success{border-color:var(--green);color:var(--green)}
+#toast.error{border-color:var(--accent2);color:var(--accent2)}
+#toast.info{border-color:var(--accent);color:var(--accent)}
+
+/* CONFIRM MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;display:none;place-items:center}
+.modal-overlay.show{display:grid}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:360px;width:90%;text-align:center}
+.modal h3{font-size:1.1rem;margin-bottom:10px}
+.modal p{color:var(--muted);font-size:.85rem;margin-bottom:22px;line-height:1.6}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">🎓</div>
+        AttendAI
+        <span class="badge">Teacher</span>
+      </div>
+      <div class="live-badge"><div class="live-dot"></div>Live</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <p class="page-title">Overview</p>
+    <h1>Teacher <span>Dashboard</span></h1>
+
+    <!-- Stats -->
+    <div class="grid-4">
+      <div class="card"><div class="card-label">Present</div><div class="card-value accent-green" id="stat-present">0</div><div class="card-sub">current session</div></div>
+      <div class="card"><div class="card-label">Total Students</div><div class="card-value accent-purple" id="stat-total">—</div><div class="card-sub">registered</div></div>
+      <div class="card"><div class="card-label">Attendance %</div><div class="card-value accent-yellow" id="stat-pct">0%</div><div class="card-sub">current session</div></div>
+      <div class="card"><div class="card-label">Sessions Today</div><div class="card-value" id="stat-sessions">0</div><div class="card-sub">generated</div></div>
+    </div>
+
+    <!-- Nav Tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('qr')">📡 QR Session</button>
+      <button class="nav-tab" onclick="switchTab('history')">🕐 History</button>
+      <button class="nav-tab" onclick="switchTab('students')">👥 Students</button>
+    </div>
+
+    <!-- TAB: QR SESSION -->
+    <div class="tab-panel active" id="tab-qr">
+      <div class="grid-2">
+
+        <!-- QR Generator -->
+        <div class="qr-card">
+          <h2>📡 New Lecture Session</h2>
+
+          <div class="form-row">
+            <div class="form-field">
+              <div class="field-label">Subject</div>
+              <select class="form-select" id="subjectSelect" onchange="onSubjectChange()">
+                <option value="">— Select Subject —</option>
+                <option>Data Structures</option>
+                <option>Algorithms</option>
+                <option>Operating Systems</option>
+                <option>Database Management</option>
+                <option>Computer Networks</option>
+                <option>Software Engineering</option>
+                <option>Machine Learning</option>
+                <option>Web Development</option>
+                <option>Mathematics</option>
+                <option>Physics</option>
+                <option value="__custom__">+ Custom Subject…</option>
+              </select>
+            </div>
+          </div>
+          <div id="customSubjectRow" style="display:none;" class="form-row">
+            <div class="form-field">
+              <div class="field-label">Custom Subject Name</div>
+              <input type="text" class="form-input" id="customSubject" placeholder="Enter subject name">
+            </div>
+          </div>
+
+          <div id="lectureBadgeWrap" style="margin-bottom:12px;display:none">
+            <span class="lecture-badge">📚 Lecture <span id="lectureNoPreview">1</span> of <span id="subjectName">—</span></span>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-bottom:6px">
+            <button class="btn btn-primary" id="generateBtn" onclick="generateQR()">▶ Start Session</button>
+            <button class="btn btn-red" id="stopBtn" onclick="confirmStop()" disabled>⏹ Stop Session</button>
+          </div>
+
+          <div class="qr-display">
+            <div class="qr-frame" id="qrFrame">
+              <div class="qr-placeholder">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1"/>
+                  <circle cx="17.5" cy="17.5" r="1.5"/><path d="M14 14h3v3"/><path d="M17 20v1"/><path d="M20 14v3h1"/>
+                </svg>
+                <span>Select a subject &amp;<br>click Start Session</span>
+              </div>
+            </div>
+            <div id="timerSection" style="display:none;flex-direction:column;align-items:center;gap:8px">
+              <div class="timer-text" id="timerText">02:00</div>
+              <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+            </div>
+            <div class="session-stopped-banner" id="stoppedBanner">⏹ Session stopped by teacher</div>
+            <div class="session-meta" id="sessionMeta"></div>
+            <div class="action-row" id="qrButtons" style="display:none">
+              <button class="btn btn-secondary" onclick="generateQR()" style="font-size:.72rem">↻ New QR</button>
+              <a id="downloadBtn" class="btn btn-secondary" download="qr.png" style="font-size:.72rem">⬇ Download</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Attendance -->
+        <div class="qr-card">
+          <div class="section-header">
+            <h2>✅ Live Attendance</h2>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary" onclick="refreshAttendance()" style="font-size:.72rem">↻ Refresh</button>
+              <button class="btn btn-green" id="exportBtn" onclick="exportCSV()" disabled>Export CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Student</th><th>Dept / Year</th><th>Time</th><th>Status</th></tr></thead>
+              <tbody id="attendanceBody">
+                <tr><td colspan="4"><div class="empty-state">Start a session to track attendance</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: HISTORY -->
+    <div class="tab-panel" id="tab-history">
+      <div class="card">
+        <div class="section-header">
+          <h2>🕐 Session History</h2>
+          <span class="badge" id="sessionCountBadge">0 sessions</span>
+        </div>
+
+        <!-- Subject filter pills -->
+        <div class="subject-pills" id="subjectFilterPills">
+          <button class="subject-pill active" onclick="filterBySubject(null, this)">All</button>
+        </div>
+
+        <div class="session-list" id="sessionList">
+          <div class="empty-state">No sessions yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: STUDENTS -->
+    <div class="tab-panel" id="tab-students">
+      <div class="card">
+        <div class="section-header">
+          <h2>👥 Registered Students</h2>
+          <span class="badge" id="studentCountBadge">0 students</span>
+        </div>
+        <div class="students-grid" id="studentsGrid">
+          <div class="empty-state">Loading students…</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Stop confirm modal -->
+<div class="modal-overlay" id="stopModal">
+  <div class="modal">
+    <h3>⏹ Stop Session?</h3>
+    <p>This will immediately expire the QR code and prevent any new attendance submissions. Students who haven't scanned yet won't be able to.</p>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-red" onclick="stopSession()">Stop Now</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let currentSessionId = null;
+let timerInterval = null;
+let expiryTime = null;
+let autoRefreshTimer = null;
+let sessionStopped = false;
+let allSessions = [];
+let selectedSubjectFilter = null;
+
+// ── TAB SWITCH ──
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'history') loadSessions();
+  if (name === 'students') loadStudents();
+}
+
+// ── SUBJECT SELECT ──
+function onSubjectChange() {
+  const sel = document.getElementById('subjectSelect').value;
+  document.getElementById('customSubjectRow').style.display = sel === '__custom__' ? 'flex' : 'none';
+  if (sel && sel !== '__custom__') updateLectureBadge(sel);
+  else document.getElementById('lectureBadgeWrap').style.display = 'none';
+}
+
+async function updateLectureBadge(subject) {
+  const res = await fetch('/subjects');
+  const subs = await res.json();
+  const found = subs.find(s => s.name === subject);
+  const count = found ? found.count + 1 : 1;
+  document.getElementById('lectureNoPreview').textContent = count;
+  document.getElementById('subjectName').textContent = subject;
+  document.getElementById('lectureBadgeWrap').style.display = 'block';
+}
+
+function getSubject() {
+  const sel = document.getElementById('subjectSelect').value;
+  if (sel === '__custom__') return document.getElementById('customSubject').value.trim();
+  return sel;
+}
+
+// ── GENERATE QR ──
+async function generateQR() {
+  const subject = getSubject();
+  if (!subject) { showToast('Please select a subject first', 'error'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true; btn.textContent = 'Starting…';
+
+  clearTimeout(autoRefreshTimer);
+  clearInterval(timerInterval);
+  sessionStopped = false;
+
+  try {
+    const res = await fetch('/generate_session', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ subject })
+    });
+    const data = await res.json();
+
+    currentSessionId = data.session_id;
+    expiryTime = new Date(data.expiry_time + 'Z');
+
+    document.getElementById('qrFrame').innerHTML = `<img src="${data.qr_image}?t=${Date.now()}" alt="QR Code">`;
+    document.getElementById('timerSection').style.display = 'flex';
+    document.getElementById('qrButtons').style.display = 'flex';
+    document.getElementById('stoppedBanner').style.display = 'none';
+    document.getElementById('sessionMeta').textContent =
+      `${subject} · Lecture ${data.lecture_no} · ${data.session_id.slice(0,8)}…`;
+    document.getElementById('downloadBtn').href = data.qr_image;
+    document.getElementById('exportBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('lectureBadgeWrap').style.display = 'block';
+    document.getElementById('lectureNoPreview').textContent = data.lecture_no;
+    document.getElementById('subjectName').textContent = subject;
+
+    startTimer();
+    refreshAttendance();
+    showToast(`Lecture ${data.lecture_no} of "${subject}" started!`, 'success');
+
+    autoRefreshTimer = setTimeout(() => { if (!sessionStopped) generateQR(); }, (2*60-4)*1000);
+  } catch(e) {
+    showToast('Failed to generate QR. Is the server running?', 'error');
+  }
+  btn.disabled = false; btn.textContent = '▶ Start Session';
+}
+
+// ── STOP SESSION ──
+function confirmStop() {
+  if (!currentSessionId) return;
+  document.getElementById('stopModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('stopModal').classList.remove('show');
+}
+async function stopSession() {
+  closeModal();
+  if (!currentSessionId) return;
+
+  const res = await fetch('/stop_session', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ session_id: currentSessionId })
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    sessionStopped = true;
+    clearInterval(timerInterval);
+    clearTimeout(autoRefreshTimer);
+    document.getElementById('timerSection').style.display = 'none';
+    document.getElementById('stoppedBanner').style.display = 'block';
+    document.getElementById('stopBtn').disabled = true;
+    document.getElementById('qrFrame').innerHTML = `
+      <div class="qr-placeholder">
+        <span style="font-size:2rem">⏹</span>
+        <span>Session Stopped</span>
+      </div>`;
+    showToast(data.message, 'info');
+    refreshAttendance();
+    loadSessions();
+  }
+}
+
+// ── TIMER ──
+function startTimer() {
+  timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+}
+function updateTimer() {
+  if (sessionStopped) return;
+  const remaining = Math.max(0, expiryTime - new Date());
+  const pct = (remaining / (2*60*1000)) * 100;
+  const m = Math.floor(remaining/60000), s = Math.floor((remaining%60000)/1000);
+  const el = document.getElementById('timerText');
+  const fill = document.getElementById('timerFill');
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  fill.style.width = pct + '%';
+  el.className = 'timer-text' + (pct<25?' critical':pct<50?' warning':'');
+  fill.className = 'timer-fill' + (pct<25?' critical':pct<50?' warning':'');
+  if (remaining === 0) { clearInterval(timerInterval); el.textContent = 'EXPIRED'; }
+}
+
+// ── ATTENDANCE ──
+async function refreshAttendance() {
+  if (!currentSessionId) return;
+  const res = await fetch(`/attendance_list?session_id=${currentSessionId}`);
+  const data = await res.json();
+  document.getElementById('stat-present').textContent = data.present_count;
+  document.getElementById('stat-total').textContent = data.total_students;
+  const pct = data.total_students > 0 ? Math.round(data.present_count/data.total_students*100) : 0;
+  document.getElementById('stat-pct').textContent = pct + '%';
+
+  const tbody = document.getElementById('attendanceBody');
+  if (!data.attendance.length) {
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">Waiting for students to scan…</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.attendance.map(r => {
+    const t = new Date(r.timestamp + 'Z').toLocaleTimeString();
+    return `<tr>
+      <td><div class="td-name">${r.name}</div><div class="td-sub">${r.student_id}</div></td>
+      <td><div class="td-sub">${r.department||'—'}</div><div class="td-sub">${r.year||'—'}</div></td>
+      <td class="td-sub">${t}</td>
+      <td><span class="status-badge status-present">● present</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SESSIONS HISTORY ──
+async function loadSessions() {
+  const url = selectedSubjectFilter ? `/sessions?subject=${encodeURIComponent(selectedSubjectFilter)}` : '/sessions';
+  const res = await fetch(url);
+  allSessions = await res.json();
+
+  document.getElementById('stat-sessions').textContent = allSessions.length;
+  document.getElementById('sessionCountBadge').textContent = allSessions.length + ' sessions';
+
+  // Build subject pills
+  const allRes = await fetch('/sessions');
+  const allS = await allRes.json();
+  const subjects = [...new Set(allS.map(s => s.subject).filter(Boolean))];
+  const pillsContainer = document.getElementById('subjectFilterPills');
+  const allBtn = pillsContainer.querySelector('.subject-pill');
+  pillsContainer.innerHTML = '';
+  const allPill = document.createElement('button');
+  allPill.className = 'subject-pill' + (!selectedSubjectFilter ? ' active' : '');
+  allPill.textContent = 'All';
+  allPill.onclick = () => filterBySubject(null, allPill);
+  pillsContainer.appendChild(allPill);
+  subjects.forEach(sub => {
+    const p = document.createElement('button');
+    p.className = 'subject-pill' + (selectedSubjectFilter === sub ? ' active' : '');
+    const cnt = allS.filter(s => s.subject === sub).length;
+    p.innerHTML = `${sub} <span class="count">${cnt}</span>`;
+    p.onclick = () => filterBySubject(sub, p);
+    pillsContainer.appendChild(p);
+  });
+
+  // Attendance counts
+  const listRes = await fetch('/attendance_list');
+  const listData = await listRes.json();
+  const countMap = {};
+  listData.attendance.forEach(a => { countMap[a.session_id] = (countMap[a.session_id]||0)+1; });
+
+  const container = document.getElementById('sessionList');
+  if (!allSessions.length) { container.innerHTML = `<div class="empty-state">No sessions yet.</div>`; return; }
+
+  container.innerHTML = allSessions.map(s => {
+    const stopped = s.status === 'stopped';
+    const expired = !stopped && new Date(s.expiry_time + 'Z') < new Date();
+    const count = countMap[s.id] || 0;
+    const t = new Date(s.created_time + 'Z').toLocaleString();
+    const statusBadge = stopped
+      ? `<span class="status-badge status-stopped">⏹ stopped</span>`
+      : expired
+        ? `<span class="badge">expired</span>`
+        : `<span class="status-badge status-active">● active</span>`;
+    return `<div class="session-item ${s.id===currentSessionId?'active':''} ${stopped?'stopped-item':''}"
+      onclick="viewSession('${s.id}')">
+      <div>
+        <div class="si-subject">📚 ${s.subject||'General'} — Lecture ${s.lecture_no||'?'}</div>
+        <div class="si-meta">${t} · ${s.id.slice(0,8)}…</div>
+      </div>
+      <div class="si-right">
+        <span class="si-count">${count} present</span>
+        ${statusBadge}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterBySubject(subject, btn) {
+  selectedSubjectFilter = subject;
+  document.querySelectorAll('.subject-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  loadSessions();
+}
+
+async function viewSession(sid) {
+  currentSessionId = sid;
+  document.getElementById('exportBtn').disabled = false;
+  switchTabDirect('qr');
+  await refreshAttendance();
+  showToast('Viewing session ' + sid.slice(0,8), 'info');
+}
+
+function switchTabDirect(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab')[0].classList.add('active');
+}
+
+// ── STUDENTS ──
+async function loadStudents() {
+  const res = await fetch('/students');
+  const students = await res.json();
+  document.getElementById('studentCountBadge').textContent = students.length + ' students';
+  const grid = document.getElementById('studentsGrid');
+  if (!students.length) { grid.innerHTML = `<div class="empty-state">No students registered yet.</div>`; return; }
+  grid.innerHTML = students.map(s => {
+    const initials = s.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="student-card">
+      <div class="sc-header">
+        <div class="sc-avatar">${initials}</div>
+        <div><div class="sc-name">${s.name}</div><div class="sc-id">${s.id}</div></div>
+      </div>
+      <div class="sc-detail">
+        <span class="sc-chip">📧 ${s.email}</span>
+        ${s.department ? `<span class="sc-chip">🏛 ${s.department}</span>` : ''}
+        ${s.year ? `<span class="sc-chip">📅 ${s.year}</span>` : ''}
+        ${s.phone ? `<span class="sc-chip">📞 ${s.phone}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportCSV() {
+  window.open(`/export_csv?session_id=${currentSessionId||'all'}`, '_blank');
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3200);
+}
+
+setInterval(() => { if(currentSessionId && !sessionStopped) refreshAttendance(); }, 5000);
+fetch('/attendance_list').then(r=>r.json()).then(d => {
+  document.getElementById('stat-total').textContent = d.total_students;
+});
+fetch('/sessions').then(r=>r.json()).then(d => {
+  document.getElementById('stat-sessions').textContent = d.length;
+});
+</script>
+</body>
+</html>

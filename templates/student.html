@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AttendAI — Student</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+:root {
+  --bg:#f0f0ff; --surface:#fff; --surface2:#f5f5ff;
+  --accent:#5c52e8; --accent-light:#ede9ff;
+  --green:#00c48c; --green-light:#e0fff5;
+  --red:#ff4757; --red-light:#fff0f0;
+  --yellow:#ffb300; --text:#1a1a2e; --muted:#888aaa;
+  --border:#e4e4f0; --radius:18px;
+  --mono:'Space Mono',monospace; --sans:'Nunito',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;padding-bottom:48px}
+body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(80px);z-index:0;pointer-events:none}
+body::before{width:280px;height:280px;background:rgba(92,82,232,.14);top:-60px;right:-60px}
+body::after{width:220px;height:220px;background:rgba(0,196,140,.11);bottom:30px;left:-50px}
+.page{max-width:440px;margin:0 auto;padding:0 18px;position:relative;z-index:1}
+
+/* HEADER */
+header{text-align:center;padding:28px 0 16px}
+.app-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border-radius:16px;display:grid;place-items:center;font-size:1.6rem;margin:0 auto 12px;box-shadow:0 8px 24px rgba(92,82,232,.3)}
+header h1{font-size:1.4rem;font-weight:800;letter-spacing:-.4px}
+header p{color:var(--muted);font-size:.82rem;margin-top:4px}
+
+/* MODE TOGGLE */
+.mode-toggle{display:flex;background:var(--border);border-radius:12px;padding:4px;margin:16px 0 20px;gap:4px}
+.mode-btn{flex:1;padding:9px;border:none;border-radius:9px;font-family:var(--sans);font-size:.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s}
+.mode-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+/* STEPS */
+.steps{display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--muted);display:grid;place-items:center;font-size:.72rem;font-weight:700;font-family:var(--mono);transition:all .3s}
+.step-label{font-size:.62rem;color:var(--muted);text-align:center}
+.step.active .step-num{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(92,82,232,.4)}
+.step.done .step-num{background:var(--green);color:#fff}
+.step.active .step-label,.step.done .step-label{color:var(--text)}
+.step-line{flex:1;max-width:36px;height:2px;background:var(--border);margin-bottom:16px}
+.step-line.done{background:var(--green)}
+
+/* CARD */
+.card{background:var(--surface);border-radius:var(--radius);padding:22px;box-shadow:0 4px 20px rgba(0,0,0,.07);margin-bottom:14px}
+.card h2{font-size:.95rem;font-weight:700;margin-bottom:14px}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+.input-group{margin-bottom:0}
+.input-group label{display:block;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.input-group input,.input-group select{width:100%;border:2px solid var(--border);border-radius:11px;padding:11px 13px;font-family:var(--sans);font-size:.9rem;font-weight:600;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;background:var(--surface2)}
+.input-group input:focus,.input-group select:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-light);background:var(--surface)}
+.input-group input::placeholder{color:var(--muted);font-weight:400}
+.input-group select option{background:var(--surface);color:var(--text)}
+.form-spacer{height:12px}
+
+/* BUTTONS */
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:var(--sans);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;box-shadow:0 4px 14px rgba(92,82,232,.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(92,82,232,.45)}
+.btn-primary:disabled{opacity:.5;transform:none;cursor:not-allowed}
+.btn-outline{background:var(--surface2);color:var(--accent);border:2px solid var(--accent)}
+.btn-outline:hover{background:var(--accent-light)}
+.btn-sm{padding:9px 16px;font-size:.8rem;border-radius:9px;width:auto}
+
+/* STUDENT CHIPS */
+.chips-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.chips-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-light);color:var(--accent);border-radius:99px;padding:4px 12px;font-size:.72rem;font-weight:700;cursor:pointer;transition:background .15s}
+.chip:hover{background:var(--accent);color:#fff}
+
+/* CAMERA */
+.camera-area{position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:1;margin-bottom:12px}
+#videoEl{width:100%;height:100%;object-fit:cover;display:block}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-frame{width:60%;aspect-ratio:1;border:3px solid rgba(255,255,255,.8);border-radius:12px;box-shadow:0 0 0 1000px rgba(0,0,0,.4);position:relative}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:scanLine 2s linear infinite}
+@keyframes scanLine{0%{top:0}100%{top:100%}}
+.corner{position:absolute;width:20px;height:20px}
+.corner-tl{top:-3px;left:-3px;border-top:4px solid var(--green);border-left:4px solid var(--green);border-radius:4px 0 0 0}
+.corner-tr{top:-3px;right:-3px;border-top:4px solid var(--green);border-right:4px solid var(--green);border-radius:0 4px 0 0}
+.corner-bl{bottom:-3px;left:-3px;border-bottom:4px solid var(--green);border-left:4px solid var(--green);border-radius:0 0 0 4px}
+.corner-br{bottom:-3px;right:-3px;border-bottom:4px solid var(--green);border-right:4px solid var(--green);border-radius:0 0 4px 0}
+#canvasEl{display:none}
+.camera-status{text-align:center;padding:8px;font-size:.78rem;color:var(--muted);font-family:var(--mono);min-height:30px}
+.camera-status.scanning{color:var(--accent)}
+.camera-status.found{color:var(--green);font-weight:700}
+
+/* GPS */
+.gps-row{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:11px 13px;margin-bottom:12px;border:2px solid var(--border)}
+.gps-text{flex:1}
+.gps-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.gps-value{font-size:.75rem;font-family:var(--mono);margin-top:2px}
+.gps-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0}
+.gps-dot.active{background:var(--green);animation:gpsPulse 1.5s infinite}
+@keyframes gpsPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* RESULT */
+.result-card{border-radius:var(--radius);padding:26px 22px;text-align:center;margin-bottom:14px}
+.result-card.success{background:var(--green-light);border:2px solid var(--green)}
+.result-card.error{background:var(--red-light);border:2px solid var(--red)}
+.result-icon{font-size:2.8rem;margin-bottom:10px}
+.result-title{font-size:1.25rem;font-weight:800;margin-bottom:6px}
+.result-title.success{color:var(--green)}
+.result-title.error{color:var(--red)}
+.result-msg{font-size:.83rem;color:var(--muted);line-height:1.5}
+.result-detail{background:var(--surface);border-radius:10px;padding:10px 13px;margin-top:13px;font-family:var(--mono);font-size:.7rem;color:var(--muted);text-align:left;line-height:1.8;white-space:pre}
+
+/* REGISTERED CARD */
+.reg-success{background:var(--green-light);border:2px solid var(--green);border-radius:var(--radius);padding:22px;text-align:center;margin-bottom:14px}
+.reg-id-display{font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--green);margin:10px 0}
+.reg-name{font-weight:700;font-size:1rem}
+.reg-hint{font-size:.78rem;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <div class="app-icon">📱</div>
+    <h1>AttendAI Student</h1>
+    <p>Register or mark your attendance</p>
+  </header>
+
+  <!-- Mode Toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeAttend" onclick="setMode('attend')">📷 Mark Attendance</button>
+    <button class="mode-btn" id="modeRegister" onclick="setMode('register')">✍️ Register</button>
+  </div>
+
+  <!-- ══════════ ATTEND MODE ══════════ -->
+  <div id="attendMode">
+    <div class="steps">
+      <div class="step active" id="step1"><div class="step-num">1</div><div class="step-label">Identify</div></div>
+      <div class="step-line" id="line1"></div>
+      <div class="step" id="step2"><div class="step-num">2</div><div class="step-label">Scan QR</div></div>
+      <div class="step-line" id="line2"></div>
+      <div class="step" id="step3"><div class="step-num">3</div><div class="step-label">Done</div></div>
+    </div>
+
+    <!-- Step 1: ID -->
+    <div id="step1Section" class="card">
+      <h2>👤 Enter Your Student ID</h2>
+      <div class="input-group" style="margin-bottom:14px">
+        <label>Student ID</label>
+        <input type="text" id="studentIdInput" placeholder="e.g. STU001" autocapitalize="characters" autocomplete="off">
+      </div>
+      <p class="chips-label">Quick Select</p>
+      <div class="chips-wrap" id="studentChips"></div>
+      <button class="btn btn-primary" onclick="proceedToScan()">Continue to QR Scan →</button>
+    </div>
+
+    <!-- Step 2: QR Scan -->
+    <div id="step2Section" class="card" style="display:none">
+      <h2>📷 Scan QR Code</h2>
+      <div class="gps-row">
+        <span style="font-size:1.1rem">📍</span>
+        <div class="gps-text">
+          <div class="gps-label">GPS Location</div>
+          <div class="gps-value" id="gpsValue">Requesting…</div>
+        </div>
+        <div class="gps-dot" id="gpsDot"></div>
+      </div>
+      <div class="camera-area">
+        <video id="videoEl" playsinline autoplay muted></video>
+        <canvas id="canvasEl"></canvas>
+        <div class="scan-overlay">
+          <div class="scan-frame">
+            <div class="scan-line"></div>
+            <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+          </div>
+        </div>
+      </div>
+      <div class="camera-status scanning" id="cameraStatus">Initializing camera…</div>
+      <button class="btn btn-outline" onclick="backToStep1()">← Back</button>
+    </div>
+
+    <!-- Step 3: Result -->
+    <div id="resultSection" style="display:none">
+      <div class="result-card" id="resultCard">
+        <div class="result-icon" id="resultIcon"></div>
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-msg" id="resultMsg"></div>
+        <div class="result-detail" id="resultDetail" style="display:none"></div>
+      </div>
+      <button class="btn btn-outline" onclick="resetAll()">Mark Another Attendance</button>
+    </div>
+  </div>
+
+  <!-- ══════════ REGISTER MODE ══════════ -->
+  <div id="registerMode" style="display:none">
+    <div id="regFormSection" class="card">
+      <h2>✍️ Student Registration</h2>
+      <div class="form-grid">
+        <div class="input-group full">
+          <label>Full Name *</label>
+          <input type="text" id="regName" placeholder="e.g. Aarav Sharma">
+        </div>
+        <div class="input-group full">
+          <label>Email Address *</label>
+          <input type="email" id="regEmail" placeholder="you@college.edu">
+        </div>
+        <div class="input-group">
+          <label>Phone Number</label>
+          <input type="tel" id="regPhone" placeholder="98XXXXXXXX">
+        </div>
+        <div class="input-group">
+          <label>Year</label>
+          <select id="regYear">
+            <option value="">— Year —</option>
+            <option>1st Year</option>
+            <option>2nd Year</option>
+            <option>3rd Year</option>
+            <option>4th Year</option>
+            <option>5th Year</option>
+          </select>
+        </div>
+        <div class="input-group full">
+          <label>Department</label>
+          <select id="regDept">
+            <option value="">— Department —</option>
+            <option>Computer Science</option>
+            <option>Information Technology</option>
+            <option>Electronics</option>
+            <option>Mechanical</option>
+            <option>Civil</option>
+            <option>Electrical</option>
+            <option>Chemical</option>
+            <option>Biotechnology</option>
+            <option>MBA</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-spacer"></div>
+      <button class="btn btn-primary" id="regBtn" onclick="registerStudent()">✍️ Register Now</button>
+    </div>
+
+    <!-- Registration success -->
+    <div id="regSuccessSection" style="display:none">
+      <div class="reg-success">
+        <div style="font-size:2.5rem">🎉</div>
+        <div class="reg-name" id="regSuccessName"></div>
+        <div style="font-size:.8rem;color:var(--muted);margin:4px 0">Your Student ID</div>
+        <div class="reg-id-display" id="regSuccessId"></div>
+        <div class="reg-hint">📋 Save this ID — you'll need it every time you mark attendance.</div>
+      </div>
+      <button class="btn btn-primary" onclick="goMarkAttendance()">📷 Mark Attendance Now</button>
+      <div class="form-spacer"></div>
+      <button class="btn btn-outline" onclick="resetRegister()">Register Another Student</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let studentId = '';
+let userLat = null, userLon = null;
+let stream = null;
+let scanning = false;
+const deviceId = getDeviceId();
+
+function getDeviceId() {
+  let id = localStorage.getItem('attend_did');
+  if (!id) { id = 'DEV-' + Math.random().toString(36).slice(2,10).toUpperCase(); localStorage.setItem('attend_did', id); }
+  return id;
+}
+
+// ── MODE TOGGLE ──
+function setMode(mode) {
+  document.getElementById('attendMode').style.display = mode==='attend' ? 'block' : 'none';
+  document.getElementById('registerMode').style.display = mode==='register' ? 'block' : 'none';
+  document.getElementById('modeAttend').classList.toggle('active', mode==='attend');
+  document.getElementById('modeRegister').classList.toggle('active', mode==='register');
+  if (mode==='attend') stopCamera();
+}
+
+// ── LOAD STUDENTS FOR CHIPS ──
+fetch('/students').then(r=>r.json()).then(students => {
+  const wrap = document.getElementById('studentChips');
+  students.slice(0,8).forEach(s => {
+    const c = document.createElement('span');
+    c.className = 'chip';
+    c.textContent = `${s.id} · ${s.name}`;
+    c.onclick = () => { document.getElementById('studentIdInput').value = s.id; };
+    wrap.appendChild(c);
+  });
+});
+
+// ── ATTEND FLOW ──
+function proceedToScan() {
+  studentId = document.getElementById('studentIdInput').value.trim().toUpperCase();
+  if (!studentId) { alert('Please enter your Student ID'); return; }
+  document.getElementById('step1Section').style.display = 'none';
+  document.getElementById('step2Section').style.display = 'block';
+  document.getElementById('resultSection').style.display = 'none';
+  setStep(2);
+  requestGPS();
+  startCamera();
+}
+
+function backToStep1() {
+  stopCamera();
+  document.getElementById('step2Section').style.display = 'none';
+  document.getElementById('step1Section').style.display = 'block';
+  setStep(1);
+}
+
+function resetAll() {
+  stopCamera();
+  document.getElementById('studentIdInput').value = '';
+  document.getElementById('step1Section').style.display = 'block';
+  document.getElementById('step2Section').style.display = 'none';
+  document.getElementById('resultSection').style.display = 'none';
+  setStep(1);
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const s = document.getElementById('step'+i);
+    s.className = 'step'+(i<n?' done':i===n?' active':'');
+  });
+  [1,2].forEach(i => {
+    document.getElementById('line'+i).className = 'step-line'+(i<n?' done':'');
+  });
+}
+
+// ── GPS ──
+function requestGPS() {
+  if (!navigator.geolocation) { document.getElementById('gpsValue').textContent='GPS not supported'; return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude; userLon = pos.coords.longitude;
+    document.getElementById('gpsValue').textContent = `${userLat.toFixed(5)}, ${userLon.toFixed(5)} ±${Math.round(pos.coords.accuracy)}m`;
+    document.getElementById('gpsDot').classList.add('active');
+  }, () => {
+    document.getElementById('gpsValue').textContent = 'Location denied (optional)';
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// ── CAMERA ──
+async function startCamera() {
+  scanning = true;
+  const status = document.getElementById('cameraStatus');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width:{ideal:640}, height:{ideal:640} }
+    });
+    const v = document.getElementById('videoEl');
+    v.srcObject = stream;
+    await v.play();
+    status.textContent = '🔍 Scanning for QR code…';
+    status.className = 'camera-status scanning';
+    requestAnimationFrame(tick);
+  } catch(e) {
+    status.textContent = '❌ Camera access denied.';
+    status.className = 'camera-status';
+  }
+}
+
+function stopCamera() {
+  scanning = false;
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream = null; }
+}
+
+function tick() {
+  if (!scanning) return;
+  const v = document.getElementById('videoEl');
+  const c = document.getElementById('canvasEl');
+  if (v.readyState !== v.HAVE_ENOUGH_DATA) { requestAnimationFrame(tick); return; }
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(v,0,0,c.width,c.height);
+  const img = ctx.getImageData(0,0,c.width,c.height);
+  const code = jsQR(img.data, c.width, c.height, {inversionAttempts:'dontInvert'});
+  if (code) { handleQR(code.data); return; }
+  requestAnimationFrame(tick);
+}
+
+async function handleQR(raw) {
+  scanning = false; stopCamera();
+  document.getElementById('cameraStatus').textContent = '✅ QR detected! Submitting…';
+  document.getElementById('cameraStatus').className = 'camera-status found';
+
+  let payload;
+  try { payload = JSON.parse(raw); }
+  catch(e) { showResult(false,'Invalid QR Code','Could not parse the QR data.'); return; }
+
+  try {
+    const res = await fetch('/mark_attendance', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        student_id: studentId,
+        session_id: payload.session_id,
+        qr_token:   payload.token,
+        latitude:   userLat,
+        longitude:  userLon,
+        device_id:  deviceId
+      })
+    });
+    const data = await res.json();
+    const detail = `Student : ${studentId}\nDevice  : ${deviceId}\nGPS     : ${userLat?`${userLat.toFixed(5)}, ${userLon.toFixed(5)}`:'N/A'}\nSession : ${payload.session_id.slice(0,8)}…\n${data.subject ? `Subject : ${data.subject} · Lecture ${data.lecture_no}` : ''}`;
+    showResult(data.success, data.success ? `Welcome, ${data.student_name}!` : 'Attendance Rejected', data.message, detail);
+  } catch(e) {
+    showResult(false, 'Network Error', 'Could not reach the server.');
+  }
+}
+
+function showResult(success, title, msg, detail='') {
+  document.getElementById('step2Section').style.display = 'none';
+  document.getElementById('resultSection').style.display = 'block';
+  setStep(3);
+  const card = document.getElementById('resultCard');
+  card.className = 'result-card ' + (success?'success':'error');
+  document.getElementById('resultIcon').textContent = success ? '🎉' : '🚫';
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultTitle').className = 'result-title ' + (success?'success':'error');
+  document.getElementById('resultMsg').textContent = msg;
+  const det = document.getElementById('resultDetail');
+  if (detail) { det.textContent = detail; det.style.display = 'block'; }
+  else det.style.display = 'none';
+}
+
+// ── REGISTER FLOW ──
+async function registerStudent() {
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const dept  = document.getElementById('regDept').value;
+  const year  = document.getElementById('regYear').value;
+
+  if (!name || !email) { alert('Name and email are required'); return; }
+
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = 'Registering…';
+
+  const res = await fetch('/register_student', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, email, phone, department: dept, year })
+  });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = '✍️ Register Now';
+
+  if (data.success) {
+    document.getElementById('regSuccessName').textContent = data.name;
+    document.getElementById('regSuccessId').textContent = data.student_id;
+    document.getElementById('regFormSection').style.display = 'none';
+    document.getElementById('regSuccessSection').style.display = 'block';
+    // Refresh chips
+    fetch('/students').then(r=>r.json()).then(students => {
+      const wrap = document.getElementById('studentChips');
+      wrap.innerHTML = '';
+      students.slice(0,8).forEach(s => {
+        const c = document.createElement('span');
+        c.className = 'chip';
+        c.textContent = `${s.id} · ${s.name}`;
+        c.onclick = () => { document.getElementById('studentIdInput').value = s.id; };
+        wrap.appendChild(c);
+      });
+    });
+  } else {
+    alert('Registration failed: ' + data.message);
+  }
+}
+
+function goMarkAttendance() {
+  const sid = document.getElementById('regSuccessId').textContent;
+  document.getElementById('studentIdInput').value = sid;
+  setMode('attend');
+}
+
+function resetRegister() {
+  document.getElementById('regFormSection').style.display = 'block';
+  document.getElementById('regSuccessSection').style.display = 'none';
+  ['regName','regEmail','regPhone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('regDept').value = '';
+  document.getElementById('regYear').value = '';
+}
+</script>
+</body>
+</html>
